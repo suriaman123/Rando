@@ -1,4 +1,4 @@
-It's About Time# GitHub Large File Storage (LFS) 
+# GitHub Large File Storage (LFS) 
 
 GitHub LFS (Large File Storage) is an extension to Git that helps manage large files in a repository.
 
