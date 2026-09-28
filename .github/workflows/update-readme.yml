@@ -1,0 +1,100 @@
+name: Update README from CSV
+
+on:
+  push:
+    paths:
+      - "Electronic Components/data.csv"
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate Markdown table
+        run: |
+          python3 - <<'PY'
+          import csv
+          from pathlib import Path
+
+          csv_file = Path("Electronic Components/data.csv")
+          readme_file = Path("Electronic Components/README.md")
+
+          with csv_file.open(newline="", encoding="utf-8-sig") as f:
+              rows = list(csv.reader(f))
+
+          headers = rows[0]
+          data = rows[1:]
+
+          table = []
+
+          def clean(value):
+              return (
+                  value
+                  .replace("|", "\\|")
+                  .replace("\n", " ")
+                  .strip()
+              )
+
+          table.append(
+              "| " + " | ".join(clean(h) for h in headers) + " |"
+          )
+
+          table.append(
+              "| " + " | ".join("---" for _ in headers) + " |"
+          )
+
+          for row in data:
+              row += [""] * (len(headers) - len(row))
+              row = row[:len(headers)]
+
+              table.append(
+                  "| " + " | ".join(clean(cell) for cell in row) + " |"
+              )
+
+          table = "\n".join(table)
+
+          readme = readme_file.read_text(encoding="utf-8")
+
+          start = "<!-- CSV_TABLE_START -->"
+          end = "<!-- CSV_TABLE_END -->"
+
+          if start not in readme or end not in readme:
+              raise SystemExit(
+                  "README.md is missing CSV_TABLE_START or CSV_TABLE_END"
+              )
+
+          before = readme.split(start, 1)[0]
+          after = readme.split(end, 1)[1]
+
+          new_readme = (
+              before
+              + start
+              + "\n\n"
+              + table
+              + "\n\n"
+              + end
+              + after
+          )
+
+          readme_file.write_text(new_readme, encoding="utf-8")
+          PY
+
+      - name: Commit README changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "Electronic Components/README.md"
+
+          if git diff --cached --quiet; then
+            echo "README is already up to date"
+          else
+            git commit -m "Update README from CSV"
+            git push
+          fi
