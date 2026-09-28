@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "Electronic Components/data.csv"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -34,20 +35,10 @@ jobs:
           table = []
 
           def clean(value):
-              return (
-                  value
-                  .replace("|", "\\|")
-                  .replace("\n", " ")
-                  .strip()
-              )
+              return value.replace("|", "\\|").replace("\n", " ").strip()
 
-          table.append(
-              "| " + " | ".join(clean(h) for h in headers) + " |"
-          )
-
-          table.append(
-              "| " + " | ".join("---" for _ in headers) + " |"
-          )
+          table.append("| " + " | ".join(clean(h) for h in headers) + " |")
+          table.append("| " + " | ".join("---" for _ in headers) + " |")
 
           for row in data:
               row += [""] * (len(headers) - len(row))
